@@ -28,6 +28,7 @@ def create_tables(conn):
                 sha VARCHAR PRIMARY KEY,
                 message TEXT,
                 author VARCHAR,
+                email VARCHAR,
                 date TIMESTAMP,
                 url VARCHAR,
                 repo_name VARCHAR
@@ -38,6 +39,7 @@ def create_tables(conn):
                 number INTEGER,
                 title TEXT,
                 author VARCHAR,
+                email VARCHAR,
                 created_at TIMESTAMP,
                 state VARCHAR,
                 comments INTEGER,
@@ -61,6 +63,7 @@ def get_all_commits(repo_name, g):
             "sha": commit.sha,
             "message": commit.commit.message,
             "author": commit.commit.author.name,
+            "email": commit.commit.author.email,
             "date": commit.commit.author.date,
             "url": commit.html_url,
             "repo_name": repo_name
@@ -80,6 +83,7 @@ def get_all_pull_requests(repo_name, g):
             "number": pull.number,
             "title": pull.title,
             "author": pull.user.login,
+            "email": pull.user.email,  # Note que nem todos os usuários terão o e-mail disponível
             "created_at": pull.created_at,
             "state": pull.state,
             "comments": pull.comments,
@@ -97,10 +101,10 @@ def store_commits(conn, commits):
     with conn.cursor() as cur:
         for commit in commits:
             cur.execute("""
-                INSERT INTO commits (sha, message, author, date, url, repo_name)
-                VALUES (%s, %s, %s, %s, %s, %s)
+                INSERT INTO commits (sha, message, author, email, date, url, repo_name)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (sha) DO NOTHING;
-            """, (commit['sha'], commit['message'], commit['author'], commit['date'], commit['url'], commit['repo_name']))
+            """, (commit['sha'], commit['message'], commit['author'], commit['email'], commit['date'], commit['url'], commit['repo_name']))
         conn.commit()
 
 # Função para armazenar pull requests no banco de dados
@@ -108,10 +112,10 @@ def store_pull_requests(conn, pull_requests):
     with conn.cursor() as cur:
         for pr in pull_requests:
             cur.execute("""
-                INSERT INTO pull_requests (number, title, author, created_at, state, comments, review_comments, commits, url, repo_name)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO pull_requests (number, title, author, email, created_at, state, comments, review_comments, commits, url, repo_name)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (number, repo_name) DO NOTHING;
-            """, (pr['number'], pr['title'], pr['author'], pr['created_at'], pr['state'], pr['comments'], pr['review_comments'], pr['commits'], pr['url'], pr['repo_name']))
+            """, (pr['number'], pr['title'], pr['author'], pr['email'], pr['created_at'], pr['state'], pr['comments'], pr['review_comments'], pr['commits'], pr['url'], pr['repo_name']))
         conn.commit()
 
 # Função principal
